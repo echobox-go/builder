@@ -1,0 +1,23 @@
+# Emil: plain Arch, Dvorak. The desktop is Emil's choice; GNOME is a placeholder.
+# Public configuration only. Secrets come from `ebox enrol` and Vaultwarden.
+user: emil
+display_name: Emil
+base: arch
+desktop: gnome
+keymap: dvorak
+locale: en_US.UTF-8
+timezone: Europe/Stockholm
+shell: bash
+packages:
+  - firefox
+  - vim
+  - git
+aur: []
+persistence: luks-passphrase
+sync:
+  home_paths:
+    - Documents
+    - .ssh
+  dotfiles: true
+  desktop_settings: true
+  packages: true

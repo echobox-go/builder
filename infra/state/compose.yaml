@@ -1,0 +1,33 @@
+# eb-state LXC: home snapshots and secrets. Private resources in Pangolin only:
+# reachable from enrolled sticks, never exposed publicly. Versions pinned Nov 2026.
+services:
+  rest-server:
+    image: restic/rest-server:0.14.0
+    restart: unless-stopped
+    environment:
+      # One repo per user under /data/<user>, users can't see each other's,
+      # and no client can delete or prune snapshots.
+      OPTIONS: "--append-only --private-repos"
+    volumes:
+      - /srv/restic:/data          # .htpasswd lives here: docker compose exec rest-server create_user <user>
+    ports:
+      - "8000:8000"
+
+  vaultwarden:
+    image: vaultwarden/server:1.37.5
+    restart: unless-stopped
+    environment:
+      DOMAIN: "https://vault.example.org"   # the Pangolin private resource address
+      SIGNUPS_ALLOWED: "false"
+      INVITATIONS_ALLOWED: "true"
+      # ADMIN_TOKEN: set an argon2 hash via an env file, not here
+    env_file:
+      - path: ./vaultwarden.env
+        required: false
+    volumes:
+      - /srv/vaultwarden:/data
+    ports:
+      - "8081:80"
+
+# Pruning runs on this host with the admin credential, not from sticks:
+#   restic -r /srv/restic/<user> forget --keep-daily 14 --keep-weekly 8 --prune

@@ -1,0 +1,93 @@
+# Builds per-user ISOs on the self-hosted eb-build runner (Forgejo Actions).
+# Checks out the ebox repo next to this one; ebox changes need a manual run
+# (workflow_dispatch) until a cross-repo trigger is set up.
+# Runner environment: CACHYOS_PROFILE_DIR. Repo variables: EBOX_PORTAL_URL,
+# EBOX_REPO_URL (optional), ISO_UPLOAD_TARGET (user@eb-portal:/srv/iso).
+# Repo secret: ISO_UPLOAD_KEY (SSH key limited to rsync into /srv/iso).
+name: build-iso
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "profiles/users/**"
+      - "render.py"
+      - "build-iso.sh"
+      - "keymaps.yaml"
+      - "desktops.yaml"
+      - "brand/**"
+  workflow_dispatch:
+    inputs:
+      user:
+        description: "User to build (empty: users changed in the last commit; 'all' for everyone)"
+        required: false
+        default: ""
+
+concurrency:
+  group: build-iso
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: eb-build
+    timeout-minutes: 180
+    env:
+      INPUT_USER: ${{ inputs.user }}
+      EBOX_PORTAL_URL: ${{ vars.EBOX_PORTAL_URL }}
+      EBOX_REPO_URL: ${{ vars.EBOX_REPO_URL }}
+      EBOX_DIR: ${{ github.workspace }}/.ebox
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/checkout@v4
+        with:
+          repository: echobox-go/ebox
+          path: .ebox
+
+      - name: Pick users
+        id: pick
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$INPUT_USER" == all ]]; then
+            users="$(ls profiles/users)"
+          elif [[ -n "$INPUT_USER" ]]; then
+            [[ "$INPUT_USER" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || { echo "bad user name"; exit 1; }
+            users="$INPUT_USER"
+          else
+            changed="$(git diff --name-only HEAD~1 HEAD || true)"
+            if grep -qvE '^profiles/users/' <<<"$changed"; then
+              # renderer, desktops, keymaps or brand changed: rebuild everyone
+              users="$(ls profiles/users)"
+            else
+              users="$(sed -nE 's#^profiles/users/([^/]+)/.*#\1#p' <<<"$changed" | sort -u)"
+            fi
+          fi
+          keep=""
+          for u in $users; do [[ -f "profiles/users/$u/profile.yaml" ]] && keep="$keep $u"; done
+          echo "users=${keep# }" >> "$GITHUB_OUTPUT"
+          echo "building: ${keep:- (none)}"
+
+      - name: Validate profiles
+        run: python3 render.py validate profiles/users/*/profile.yaml
+
+      - name: Build and upload
+        if: steps.pick.outputs.users != ''
+        shell: bash
+        env:
+          USERS: ${{ steps.pick.outputs.users }}
+          ISO_UPLOAD_TARGET: ${{ vars.ISO_UPLOAD_TARGET }}
+          ISO_UPLOAD_KEY: ${{ secrets.ISO_UPLOAD_KEY }}
+        run: |
+          set -euo pipefail
+          key="$(mktemp)"; trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$ISO_UPLOAD_KEY" > "$key"; chmod 600 "$key"
+          for u in $USERS; do
+            echo "::group::$u"
+            iso="$(./build-iso.sh --user "$u" | tail -n1)"
+            rsync -e "ssh -i $key -o StrictHostKeyChecking=accept-new" -t \
+              "$iso" "$iso.sha256" "$ISO_UPLOAD_TARGET/$u/"
+            echo "::endgroup::"
+          done

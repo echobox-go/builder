@@ -1,0 +1,27 @@
+# Niklas: CachyOS + Plasma, Swedish keyboard.
+# Public configuration only. Secrets come from `ebox enrol` and Vaultwarden.
+user: niklas
+display_name: Niklas
+base: cachyos
+cpu_level: generic        # the stick has to boot on unknown machines
+desktop: plasma
+keymap: se
+locale: sv_SE.UTF-8
+timezone: Europe/Stockholm
+shell: zsh
+packages:
+  - firefox
+  - neovim
+  - git
+  - htop
+aur: []
+persistence: luks-passphrase
+sync:
+  home_paths:
+    - Documents
+    - Projects
+    - .ssh
+    - .gnupg
+  dotfiles: true
+  desktop_settings: true
+  packages: true

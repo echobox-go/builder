@@ -1,0 +1,34 @@
+# eb-portal LXC: Forgejo (profile repos + Actions), the portal, and the ISO store.
+services:
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:15     # LTS line
+    restart: unless-stopped
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      FORGEJO__server__ROOT_URL: "https://git.example.org/"
+      FORGEJO__actions__ENABLED: "true"
+      FORGEJO__service__DISABLE_REGISTRATION: "true"
+    volumes:
+      - /srv/forgejo:/data
+    ports:
+      - "3000:3000"
+      - "2222:22"
+
+  portal:
+    build:
+      context: ../../../portal        # the portal repo, cloned next to builder
+    restart: unless-stopped
+    env_file: ./portal.env            # EBOX_PROXY_TOKEN, EBOX_ADMINS
+    volumes:
+      - /srv/profiles:/srv/profiles
+    ports:
+      - "8080:8080"
+
+  iso:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - /srv/iso:/usr/share/nginx/html:ro   # eb-build uploads here (rsync over SSH)
+    ports:
+      - "8082:80"

@@ -1,0 +1,9 @@
+/build/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.iso
+*.iso.sha256
+infra/**/portal.env
+infra/**/newt.env
+infra/**/vaultwarden.env

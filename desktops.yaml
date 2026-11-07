@@ -1,0 +1,41 @@
+# Desktop environments usable as `desktop:` in profile.yaml.
+#
+# packages:        added to the ISO package list
+# display_manager: systemd unit linked as display-manager.service
+# session:         session name used for autologin of the live user
+# autologin:       which autologin config the renderer writes
+# groups:          extra groups for the live user (wheel is always added)
+# settings_tool:   what `ebox push` / `ebox pull` use for desktop settings
+
+common:
+  packages: [networkmanager, pipewire, pipewire-pulse, wireplumber, noto-fonts, xdg-user-dirs]
+
+plasma:
+  packages: [plasma-meta, sddm, konsole, dolphin]
+  display_manager: sddm.service
+  session: plasma
+  autologin: sddm
+  settings_tool: konsave
+  agent_aur: [konsave]
+
+gnome:
+  packages: [gnome, gdm]
+  display_manager: gdm.service
+  session: gnome
+  autologin: gdm
+  settings_tool: dconf
+
+hyprland:
+  packages: [hyprland, kitty, sddm, xdg-desktop-portal-hyprland, waybar, wofi]
+  display_manager: sddm.service
+  session: hyprland
+  autologin: sddm
+  settings_tool: none
+
+xfce:
+  packages: [xfce4, xfce4-goodies, lightdm, lightdm-gtk-greeter]
+  display_manager: lightdm.service
+  session: xfce
+  autologin: lightdm
+  groups: [autologin]
+  settings_tool: none

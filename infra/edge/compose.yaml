@@ -1,0 +1,7 @@
+# eb-edge LXC: Newt site connector, connecting this Proxmox network to Pangolin.
+# Create the site in Pangolin first; it shows the ID and secret once.
+services:
+  newt:
+    image: fosrl/newt:latest      # pin to a tested tag before production
+    restart: unless-stopped
+    env_file: ./newt.env          # PANGOLIN_ENDPOINT, NEWT_ID, NEWT_SECRET

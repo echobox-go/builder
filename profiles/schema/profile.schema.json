@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/echobox-go/builder/profiles/schema/profile.schema.json",
+  "title": "echobox-go user profile",
+  "description": "Declarative description of one user's live USB. Public configuration only: never put passwords, keys or tokens here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["user", "base", "desktop", "keymap"],
+  "properties": {
+    "user": {
+      "description": "Login name of the live user. Also names the ISO and the restic repo.",
+      "type": "string",
+      "pattern": "^[a-z_][a-z0-9_-]{0,31}$"
+    },
+    "display_name": { "type": "string", "maxLength": 64 },
+    "base": {
+      "description": "Base distribution of the live image.",
+      "enum": ["arch", "cachyos"]
+    },
+    "cpu_level": {
+      "description": "CachyOS repository level. 'generic' boots on any x86_64 CPU; v3 needs AVX2, v4 needs AVX-512. Ignored for arch.",
+      "enum": ["generic", "v3", "v4"],
+      "default": "generic"
+    },
+    "desktop": {
+      "description": "Desktop environment, or 'none' for a console-only stick.",
+      "enum": ["plasma", "gnome", "hyprland", "xfce", "none"]
+    },
+    "keymap": {
+      "description": "Keyboard layout: a name from builder/keymaps.yaml, or explicit console/XKB values.",
+      "oneOf": [
+        { "type": "string", "pattern": "^[a-z0-9_-]+$" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["console", "xkb_layout"],
+          "properties": {
+            "console": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+$" },
+            "xkb_layout": { "type": "string", "pattern": "^[a-z,]+$" },
+            "xkb_variant": { "type": "string", "pattern": "^[a-z0-9_,-]*$" }
+          }
+        }
+      ]
+    },
+    "locale": {
+      "type": "string",
+      "pattern": "^[A-Za-z_]+(\\.UTF-8)?$|^C\\.UTF-8$",
+      "default": "C.UTF-8"
+    },
+    "timezone": {
+      "type": "string",
+      "pattern": "^[A-Za-z_]+(/[A-Za-z0-9_+-]+)*$",
+      "default": "UTC"
+    },
+    "hostname": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$"
+    },
+    "shell": { "enum": ["bash", "zsh", "fish"], "default": "bash" },
+    "packages": {
+      "description": "Extra packages from the official (or CachyOS) repositories.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/package" },
+      "default": []
+    },
+    "aur": {
+      "description": "AUR packages. They must be prebuilt into the echobox package repo (aurutils on eb-build).",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/package" },
+      "default": []
+    },
+    "persistence": {
+      "description": "Encrypted persistence partition created on first boot in the stick's free space.",
+      "enum": ["none", "luks-passphrase", "luks-fido2"],
+      "default": "luks-passphrase"
+    },
+    "sync": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "home_paths": {
+          "description": "Paths relative to the home directory that ebox push backs up with restic.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[^/][^\\0]*$" }
+        },
+        "dotfiles": { "type": "boolean", "default": true },
+        "desktop_settings": { "type": "boolean", "default": true },
+        "packages": {
+          "description": "Capture installed packages and /etc changes with aconfmgr.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "package": { "type": "string", "pattern": "^[a-z0-9@._+][a-z0-9@._+-]*$" }
+  }
+}

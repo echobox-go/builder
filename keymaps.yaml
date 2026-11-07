@@ -1,0 +1,13 @@
+# Named keyboard layouts usable as `keymap:` in profile.yaml.
+# console: name passed to KEYMAP= in /etc/vconsole.conf (kbd keymaps)
+# xkb_layout / xkb_variant: X11 and Wayland layout
+us:        { console: us,        xkb_layout: us }
+dvorak:    { console: dvorak,    xkb_layout: us, xkb_variant: dvorak }
+colemak:   { console: colemak,   xkb_layout: us, xkb_variant: colemak }
+se:        { console: sv-latin1, xkb_layout: se }
+se-dvorak: { console: sv-latin1, xkb_layout: se, xkb_variant: dvorak }  # no Swedish Dvorak console map in kbd; console falls back to sv-latin1
+"no":      { console: no-latin1, xkb_layout: "no" }   # quoted: bare `no` is a boolean in YAML 1.1
+dk:        { console: dk-latin1, xkb_layout: dk }
+fi:        { console: fi,        xkb_layout: fi }
+de:        { console: de-latin1, xkb_layout: de }
+uk:        { console: uk,        xkb_layout: gb }

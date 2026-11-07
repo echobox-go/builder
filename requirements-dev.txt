@@ -1,0 +1,3 @@
+-r requirements.txt
+pytest>=8
+shellcheck-py>=0.10
